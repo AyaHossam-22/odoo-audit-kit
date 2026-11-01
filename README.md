@@ -62,7 +62,7 @@ Multi-company database? Set `ODOO_COMPANY_ID` in `.env`.
 
 Designed for Odoo **17, 18 and 19** (Community and Enterprise). Notes on version differences:
 
-- Inventory valuation uses `stock.valuation.layer` when the model exists. Where it does not, it falls back to *quantity x current cost*, which is exact for average cost but only an approximation for FIFO. The report says which source was used.
+- Inventory valuation uses `stock.valuation.layer` when the model exists, then `product.total_value` (Odoo 19). Where neither exists, it falls back to *quantity x current cost*, which is exact for average cost but only an approximation for FIFO. The report says which source was used.
 - The "no accounting entry" check depends on `stock.move.account_move_ids`; if it is missing, the check is skipped and says so.
 - Expiry checks need the `product_expiry` module; bill checks need `purchase`.
 
@@ -72,7 +72,7 @@ Tested against:
 |---|---|---|
 | 17 | | not yet recorded |
 | 18 | | not yet recorded |
-| 19 | | not yet recorded |
+| 19 | Enterprise (19.0+e) | Connects and runs. 3 of 5 checks ran on a real database; `moves_without_entries` is skipped (no `stock.move.account_move_ids` on 19, support planned) and `expired_lots` is skipped when `product_expiry` is not installed |
 
 Ran it on a version and hit an error? Open an issue with the Odoo version and the message.
 

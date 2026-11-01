@@ -28,17 +28,20 @@ def run(conn: OdooConnection, opts: Options) -> CheckResult:
         return res
 
     cat_ids = list(categories)
+    has_total_value = conn.has_field("product.product", "total_value")  # Odoo 19+
     products = conn.search_read_all(
         "product.product",
         [("categ_id", "in", cat_ids)],
-        ["categ_id", "standard_price"],
+        ["categ_id", "standard_price"] + (["total_value"] if has_total_value else []),
         context={"active_test": False},
     )
     product_account: Dict[int, int] = {}
     product_cost: Dict[int, float] = {}
+    product_value: Dict[int, float] = {}
     for p in products:
         product_account[p["id"]] = categories[m2o_id(p["categ_id"])]
         product_cost[p["id"]] = float(p.get("standard_price") or 0.0)
+        product_value[p["id"]] = float(p.get("total_value") or 0.0)
 
     inventory: Dict[int, float] = defaultdict(float)
     if conn.has_model("stock.valuation.layer") and conn.has_field("stock.valuation.layer", "value"):
@@ -52,6 +55,10 @@ def run(conn: OdooConnection, opts: Options) -> CheckResult:
             account_id = product_account.get(m2o_id(layer["product_id"]))
             if account_id:
                 inventory[account_id] += float(layer.get("value") or 0.0)
+    elif has_total_value:
+        source = "product.total_value"
+        for pid, value in product_value.items():
+            inventory[product_account[pid]] += value
     else:
         source = "quantity x standard_price (approximation)"
         res.notes.append(
