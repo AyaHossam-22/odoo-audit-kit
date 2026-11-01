@@ -1,0 +1,28 @@
+# Local Odoo sandbox for trying odoo-audit-kit. NOT for production.
+# Ports are bound to 127.0.0.1 so the sandbox is not reachable from your network.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+  odoo:
+    image: odoo:${ODOO_VERSION:-18.0}
+    depends_on:
+      - db
+    ports:
+      - "127.0.0.1:8069:8069"
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD: odoo
+    volumes:
+      - odoo-data:/var/lib/odoo
+
+volumes:
+  db-data:
+  odoo-data:
