@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 
 from ..connection import OdooConnection
@@ -17,7 +18,7 @@ DESCRIPTION = (
     "Valued stock moves (in/out of internal locations) in real-time valued categories "
     "that are done but have no journal entry linked."
 )
-COLUMNS = ["move", "date", "product", "quantity", "from", "to", "unit_cost", "note"]
+COLUMNS = ["move", "date", "product", "quantity", "from", "to", "operation", "unit_cost", "note"]
 
 # One side internal, the other not: these are the moves that change company stock value.
 VALUED_MOVE_DOMAIN = [
@@ -71,7 +72,7 @@ def run(conn: OdooConnection, opts: Options) -> CheckResult:
     moves = conn.search_read_all(
         "stock.move",
         base + [(link_field, "=", False)],
-        ["reference", "date", "product_id", qty_field, "location_id", "location_dest_id"],
+        ["reference", "date", "product_id", qty_field, "location_id", "location_dest_id", "picking_type_id"],
         limit=opts.max_rows + 1,
     )
     if len(moves) > opts.max_rows:
@@ -94,8 +95,16 @@ def run(conn: OdooConnection, opts: Options) -> CheckResult:
                 "quantity": m.get(qty_field),
                 "from": m2o_name(m["location_id"]),
                 "to": m2o_name(m["location_dest_id"]),
+                "operation": m2o_name(m.get("picking_type_id")),
                 "unit_cost": cost,
                 "note": "zero cost: no entry expected" if cost == 0 else "",
             }
+        )
+    if res.rows:
+        routes = Counter((r["from"], r["to"]) for r in res.rows).most_common(5)
+        res.notes.append(
+            "Most frequent routes: " + "; ".join(f"{a} -> {b}: {n}" for (a, b), n in routes) + ". "
+            "Moves from point-of-sale and similar sources often post one consolidated entry per session, "
+            "so they can show up here without being a real gap; check the operation column."
         )
     return res
