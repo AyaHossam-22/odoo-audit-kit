@@ -153,7 +153,7 @@ class OdooConnection:
         """Field definitions of a model, or {} if the model is not installed."""
         if model not in self._fields_cache:
             try:
-                self._fields_cache[model] = self.call(model, "fields_get", [], {"attributes": ["type", "string"]})
+                self._fields_cache[model] = self.call(model, "fields_get", [], {"attributes": ["type", "string", "searchable"]})
             except xmlrpc.client.Fault:
                 self._fields_cache[model] = {}
         return self._fields_cache[model]
@@ -163,3 +163,7 @@ class OdooConnection:
 
     def has_field(self, model: str, field: str) -> bool:
         return field in self.fields(model)
+
+    def is_searchable(self, model: str, field: str) -> bool:
+        """True if the field exists and can be used in a search domain (stored or with a search method)."""
+        return bool(self.fields(model).get(field, {}).get("searchable"))

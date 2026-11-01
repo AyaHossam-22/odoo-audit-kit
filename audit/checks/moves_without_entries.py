@@ -31,7 +31,7 @@ LINK_FIELDS = ("account_move_ids", "account_move_id")
 
 
 def find_link_field(conn: OdooConnection):
-    return next((f for f in LINK_FIELDS if conn.has_field("stock.move", f)), None)
+    return next((f for f in LINK_FIELDS if conn.is_searchable("stock.move", f)), None)
 
 
 def run(conn: OdooConnection, opts: Options) -> CheckResult:
@@ -53,9 +53,11 @@ def run(conn: OdooConnection, opts: Options) -> CheckResult:
     since = (_utcnow() - timedelta(days=opts.since_days)).strftime("%Y-%m-%d %H:%M:%S")
     qty_field = "quantity" if conn.has_field("stock.move", "quantity") else "quantity_done"
 
-    # Odoo 19 stores whether a move is valued; older versions: infer it from the locations.
-    if conn.has_field("stock.move", "is_valued"):
+    # Which moves count as valued. Prefer stored flags (Odoo 19); older versions: infer from locations.
+    if conn.is_searchable("stock.move", "is_valued"):
         valued = [("is_valued", "=", True)]
+    elif conn.is_searchable("stock.move", "is_in") and conn.is_searchable("stock.move", "is_out"):
+        valued = ["|", ("is_in", "=", True), ("is_out", "=", True)]
     else:
         valued = VALUED_MOVE_DOMAIN
 
