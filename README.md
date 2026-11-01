@@ -72,7 +72,7 @@ Tested against:
 |---|---|---|
 | 17 | | not yet recorded |
 | 18 | | not yet recorded |
-| 19 | Enterprise (19.0+e) | Connects and runs. 3 of 5 checks ran on a real database; `moves_without_entries` was skipped on the first run (support for 19 added since, to be re-verified) and `expired_lots` is skipped when `product_expiry` is not installed |
+| 19 | Enterprise (19.0+e) | Ran against one real staging database: 4 of 5 checks ran, `expired_lots` skipped (`product_expiry` not installed). Results are leads to verify, not verdicts (see Limitations) |
 
 Ran it on a version and hit an error? Open an issue with the Odoo version and the message.
 
@@ -81,6 +81,7 @@ Ran it on a version and hit an error? Open an issue with the Odoo version and th
 - Bill vs PO compares unit prices before discounts, and skips lines where the bill and PO currencies differ.
 - Categories using periodic (manual) valuation are excluded from the ledger checks, since they do not create entries per move by design.
 - Moves between two internal locations are not valued moves and are excluded.
+- `moves_without_entries` can list point-of-sale moves, because PoS posts consolidated entries per session rather than per move. Use the `operation` column to filter them. Treat every result as a lead to check in Odoo, not as proof of an error.
 
 ## Development
 
