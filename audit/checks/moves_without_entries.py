@@ -26,12 +26,24 @@ VALUED_MOVE_DOMAIN = [
     "&", ("location_id.usage", "=", "internal"), ("location_dest_id.usage", "!=", "internal"),
 ]
 
+# Field linking a stock move to its journal entry(ies): one2many up to Odoo 18, may differ on 19.
+LINK_FIELDS = ("account_move_ids", "account_move_id")
+
+
+def find_link_field(conn: OdooConnection):
+    return next((f for f in LINK_FIELDS if conn.has_field("stock.move", f)), None)
+
 
 def run(conn: OdooConnection, opts: Options) -> CheckResult:
     res = CheckResult(NAME, TITLE, DESCRIPTION, COLUMNS)
 
-    if not conn.has_field("stock.move", "account_move_ids"):
-        res.skipped_reason = "stock.move has no 'account_move_ids' field on this version/setup."
+    link_field = find_link_field(conn)
+    if not link_field:
+        hints = sorted(f for f in conn.fields("stock.move") if "account" in f or "valu" in f)
+        res.skipped_reason = (
+            "stock.move has none of " + ", ".join(LINK_FIELDS) + " on this version. "
+            "Possibly related fields: " + (", ".join(hints) if hints else "none found")
+        )
         return res
     categories = realtime_categories(conn)
     if not categories:
@@ -41,16 +53,22 @@ def run(conn: OdooConnection, opts: Options) -> CheckResult:
     since = (_utcnow() - timedelta(days=opts.since_days)).strftime("%Y-%m-%d %H:%M:%S")
     qty_field = "quantity" if conn.has_field("stock.move", "quantity") else "quantity_done"
 
+    # Odoo 19 stores whether a move is valued; older versions: infer it from the locations.
+    if conn.has_field("stock.move", "is_valued"):
+        valued = [("is_valued", "=", True)]
+    else:
+        valued = VALUED_MOVE_DOMAIN
+
     base = [
         ("state", "=", "done"),
         ("date", ">=", since),
         ("product_id.categ_id", "in", list(categories)),
-    ] + VALUED_MOVE_DOMAIN + company_domain(conn)
+    ] + valued + company_domain(conn)
 
     res.checked = int(conn.call("stock.move", "search_count", [base]))
     moves = conn.search_read_all(
         "stock.move",
-        base + [("account_move_ids", "=", False)],
+        base + [(link_field, "=", False)],
         ["reference", "date", "product_id", qty_field, "location_id", "location_dest_id"],
         limit=opts.max_rows + 1,
     )

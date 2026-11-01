@@ -63,7 +63,7 @@ Multi-company database? Set `ODOO_COMPANY_ID` in `.env`.
 Designed for Odoo **17, 18 and 19** (Community and Enterprise). Notes on version differences:
 
 - Inventory valuation uses `stock.valuation.layer` when the model exists, then `product.total_value` (Odoo 19). Where neither exists, it falls back to *quantity x current cost*, which is exact for average cost but only an approximation for FIFO. The report says which source was used.
-- The "no accounting entry" check depends on `stock.move.account_move_ids`; if it is missing, the check is skipped and says so.
+- The "no accounting entry" check looks for `stock.move.account_move_ids` (or `account_move_id`) and uses `is_valued` when the version has it. If no link field exists, the check is skipped and the report lists the fields that look related.
 - Expiry checks need the `product_expiry` module; bill checks need `purchase`.
 
 Tested against:
@@ -72,7 +72,7 @@ Tested against:
 |---|---|---|
 | 17 | | not yet recorded |
 | 18 | | not yet recorded |
-| 19 | Enterprise (19.0+e) | Connects and runs. 3 of 5 checks ran on a real database; `moves_without_entries` is skipped (no `stock.move.account_move_ids` on 19, support planned) and `expired_lots` is skipped when `product_expiry` is not installed |
+| 19 | Enterprise (19.0+e) | Connects and runs. 3 of 5 checks ran on a real database; `moves_without_entries` was skipped on the first run (support for 19 added since, to be re-verified) and `expired_lots` is skipped when `product_expiry` is not installed |
 
 Ran it on a version and hit an error? Open an issue with the Odoo version and the message.
 
