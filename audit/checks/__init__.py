@@ -1,6 +1,6 @@
-from . import bill_vs_po, expired_lots, moves_without_entries, negative_stock, stock_vs_ledger
+from . import bill_vs_po, expired_lots, moves_without_entries, negative_stock, stock_vs_ledger, trial_balance
 
 ALL_CHECKS = {
     module.NAME: module
-    for module in (stock_vs_ledger, moves_without_entries, bill_vs_po, expired_lots, negative_stock)
+    for module in (stock_vs_ledger, moves_without_entries, bill_vs_po, expired_lots, negative_stock, trial_balance)
 }

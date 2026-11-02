@@ -26,6 +26,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--warn-days", type=int, default=30, help="'Expiring soon' horizon in days (default 30).")
     p.add_argument("--tolerance-pct", type=float, default=0.5, help="Bill vs PO price tolerance in %% (default 0.5).")
     p.add_argument("--tolerance-amount", type=float, default=1.0, help="Stock vs ledger tolerance in currency units (default 1.0).")
+    p.add_argument("--as-of", metavar="YYYY-MM-DD", help="Cut-off date for the trial balance check.")
+    p.add_argument("--account", metavar="CODE", help="Review one account: list its ledger lines with a running balance.")
+    p.add_argument("--from", dest="date_from", metavar="YYYY-MM-DD", help="Account review: start date (opening balance is computed before it).")
+    p.add_argument("--to", dest="date_to", metavar="YYYY-MM-DD", help="Account review: end date.")
     p.add_argument("--max-rows", type=int, default=5000, help="Cap on anomaly rows per check (default 5000).")
     p.add_argument("--out", default="audit_output", help="Output base directory (default audit_output).")
     p.add_argument("--env-file", default=".env", help="Path to the .env file (default .env).")
@@ -65,7 +69,25 @@ def main() -> int:
         tolerance_pct=args.tolerance_pct,
         tolerance_amount=args.tolerance_amount,
         max_rows=args.max_rows,
+        as_of=args.as_of,
     )
+    if args.account:
+        from audit.account_review import run_account_review
+
+        try:
+            review = run_account_review(conn, opts, args.account, args.date_from, args.date_to)
+        except Exception as exc:
+            print(f"Account review failed: {exc}", file=sys.stderr)
+            return 1
+        out_dir = make_out_dir(args.out, conn.db)
+        write_csv(review, out_dir)
+        report = write_html([review], {"Odoo": conn.version, "Database": conn.db, "Toolkit": __version__}, out_dir)
+        print(f"Connected to Odoo {conn.version} (read-only). {review.title}: {review.checked} line(s)")
+        for note in review.notes:
+            print(f"  {note}")
+        print(f"\nLedger CSV: {os.path.join(out_dir, review.name + '.csv')}\nReport: {report}")
+        return 0
+
     selected = args.checks or list(ALL_CHECKS)
     print(f"Connected to Odoo {conn.version} (read-only). Running {len(selected)} check(s)...\n")
 

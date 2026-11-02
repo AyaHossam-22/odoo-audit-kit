@@ -34,7 +34,7 @@ h1{margin-bottom:.2rem} .meta{color:#555;margin-bottom:1.5rem}
 section{border:1px solid #ddd;border-radius:8px;padding:1rem 1.2rem;margin:1rem 0}
 .badge{display:inline-block;padding:.1rem .6rem;border-radius:999px;font-size:.8rem;font-weight:600}
 .clean{background:#d9f2e0;color:#14532d}.anomalies{background:#fde2e1;color:#7f1d1d}
-.skipped{background:#e5e7eb;color:#374151}.error{background:#fef3c7;color:#78350f}
+.skipped{background:#e5e7eb;color:#374151}.listing{background:#dbeafe;color:#1e3a8a}.error{background:#fef3c7;color:#78350f}
 table{border-collapse:collapse;width:100%;font-size:.88rem;margin-top:.6rem}
 th,td{border-bottom:1px solid #eee;padding:.35rem .5rem;text-align:left}th{background:#f6f7f9}
 .note{color:#555;font-size:.85rem}
@@ -50,7 +50,7 @@ def write_html(results: List[CheckResult], meta: Dict[str, str], out_dir: str) -
         "<div class='meta'>" + " &middot; ".join(f"{esc(k)}: {esc(v)}" for k, v in meta.items()) + "</div>",
     ]
     for r in results:
-        detail = f"{len(r.rows)} anomalies / {r.checked} checked" if r.status in ("clean", "anomalies") else ""
+        detail = f"{len(r.rows)} anomalies / {r.checked} checked" if r.status in ("clean", "anomalies") else (f"{len(r.rows)} lines" if r.status == "listing" else "")
         parts.append(
             f"<section><h2>{esc(r.title)} <span class='badge {r.status}'>{esc(r.status)}</span></h2>"
             f"<div class='note'>{esc(r.description)} {esc(detail)}</div>"

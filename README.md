@@ -17,6 +17,7 @@ Instead of eyeballing reports, you point the toolkit at a **staging copy** of an
 | `bill_vs_po` | Which posted vendor bills have a unit price different from the purchase order, or bill more than was ordered? |
 | `expired_lots` | Which lots are expired (or expiring within N days) and still have stock on hand? |
 | `negative_stock` | Which internal-location quants have a negative quantity? |
+| `trial_balance` | Do total debits equal total credits, and which accounts sit on the unusual side for their type (an asset with a credit balance, income with a debit balance...)? Use `--as-of YYYY-MM-DD` for a cut-off date. |
 
 The first check reconciles at **valuation-account level** (that is the granularity the ledger has). To find the product behind a gap, start from the account, then use `moves_without_entries` and `bill_vs_po` to trace the operation that broke the match.
 
@@ -48,9 +49,22 @@ python run_audit.py --tolerance-pct 1 --tolerance-amount 5
 | `--tolerance-pct` | 0.5 | Allowed % gap between bill price and PO price |
 | `--tolerance-amount` | 1.0 | Allowed gap (currency units) between inventory value and ledger |
 | `--max-rows` | 5000 | Cap on anomaly rows per check |
+| `--as-of` | | Cut-off date for the trial balance check |
+| `--account` | | Review one account (see above) |
+| `--from` / `--to` | | Period for the account review |
 | `--out` | `audit_output` | Output directory |
 
 Multi-company database? Set `ODOO_COMPANY_ID` in `.env`.
+
+## Reviewing a single account
+
+To walk one account of the general ledger line by line (opening balance, running balance, entry type, partner), pass its code:
+
+```bash
+python run_audit.py --account 112300 --from 2026-01-01 --to 2026-10-31
+```
+
+It writes `account_<code>.csv` plus an HTML view and prints the totals. The `entry_type` column separates vendor bills, customer invoices, payments and manual journal entries (`entry`); manual entries on an account are usually the first thing worth reading. Posted entries only.
 
 ## Safety
 
