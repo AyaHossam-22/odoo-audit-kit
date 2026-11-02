@@ -122,6 +122,8 @@ def run_account_review(
         res.notes.append("Lines by entry type: " + ", ".join(f"{k}: {n}" for k, n in kinds.most_common()))
         if kinds.get("entry"):
             res.notes.append(
-                f"{kinds['entry']} line(s) come from manual journal entries (entry_type = entry): worth a look."
+                f"{kinds['entry']} line(s) come from plain journal entries (entry_type = entry). These are manual "
+                "entries but also system-generated ones such as stock valuation and point-of-sale postings, "
+                "so check the journal and label columns before treating them as manual."
             )
     return res

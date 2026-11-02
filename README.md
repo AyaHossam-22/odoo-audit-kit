@@ -64,7 +64,7 @@ To walk one account of the general ledger line by line (opening balance, running
 python run_audit.py --account 112300 --from 2026-01-01 --to 2026-10-31
 ```
 
-It writes `account_<code>.csv` plus an HTML view and prints the totals. The `entry_type` column separates vendor bills, customer invoices, payments and manual journal entries (`entry`); manual entries on an account are usually the first thing worth reading. Posted entries only.
+It writes `account_<code>.csv` plus an HTML view and prints the totals. The `entry_type` column separates vendor bills, customer invoices, payments and plain journal entries (`entry`). Plain entries include manual ones but also system-generated postings (stock valuation, point of sale), so read the `journal` and `label` columns before assuming an entry was made by hand. Posted entries only.
 
 ## Safety
 

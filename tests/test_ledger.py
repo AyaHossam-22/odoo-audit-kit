@@ -125,7 +125,7 @@ def test_account_review_with_opening_balance_and_manual_entries():
     assert res.rows[0]["entry"] == "OPENING BALANCE" and res.rows[0]["running_balance"] == 1000.0
     assert [r["entry"] for r in res.rows[1:]] == ["BILL/1", "JE/2"]  # sorted by date, not by id
     assert [r["running_balance"] for r in res.rows[1:]] == [1100.0, 1070.0]
-    assert any("manual journal entries" in n for n in res.notes)
+    assert any("plain journal entries" in n and "system-generated" in n for n in res.notes)
 
 
 def test_unknown_account_code_gives_a_clear_error():
